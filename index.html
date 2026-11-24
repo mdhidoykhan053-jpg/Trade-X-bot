@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TradeX Real-Time Signal Analyzer</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/7xfp9wPc/file-0000000034a882118c784129da56f6ed.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #06030d;
+            color: #ffffff;
+            min-height: 100vh;
+            width: 100vw;
+            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, rgba(0, 0, 0, 0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .app-card {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 430px;
+            max-height: 93vh;
+            overflow-y: auto;
+            background: rgba(18, 10, 36, 0.96);
+            border: 1.5px solid #a855f7;
+            border-radius: 24px;
+            padding: 18px 16px;
+            box-shadow: 0 0 35px rgba(168, 85, 247, 0.4);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            text-align: center;
+        }
+
+        .bot-header-logo {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto;
+            border-radius: 50%;
+            border: 2px solid #00ff66;
+            box-shadow: 0 0 18px #00ff66;
+            background: radial-gradient(circle, #2e1065, #0f0720);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .bot-header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .app-title {
+            font-size: 19px;
+            font-weight: 900;
+            color: #e9d5ff;
+        }
+
+        .app-sub {
+            font-size: 10px;
+            color: #c084fc;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(15, 7, 32, 0.95);
+            border: 1px solid rgba(168, 85, 247, 0.45);
+            color: #e9d5ff;
+            margin: 0 auto;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .dot.live {
+            background: #00ff66;
+            box-shadow: 0 0 8px #00ff66;
+        }
+
+        .dot.err {
+            background: #ff3366;
+            box-shadow: 0 0 8px #ff3366;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            text-align: left;
+        }
+
+        .input-label {
+            font-size: 11px;
+            color: #c084fc;
+            font-weight: bold;
+        }
+
+        .key-input, .text-input, .price-series-input, .select-input {
+            width: 100%;
+            padding: 9px 11px;
+            border-radius: 12px;
+            border: 1px solid #a855f7;
+            background: #0f0720;
+            color: #00ff66;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .key-input {
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 1.2px;
+            font-size: 13px;
+        }
+
+        .text-input, .select-input {
+            color: #e9d5ff;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .price-series-input {
+            min-height: 58px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        .btn-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-animated {
+            width: 100%;
+            padding: 10px;
+            border: 1.5px solid rgba(192, 132, 252, 0.65);
+            border-radius: 12px;
+            background: linear-gradient(120deg, #4c1d95 0%, #7e22ce 50%, #4c1d95 100%);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-active-bot {
+            background: linear-gradient(120deg, #065f46 0%, #059669 50%, #065f46 100%);
+            border-color: rgba(16, 185, 129, 0.85);
+        }
+
+        .btn-stop {
+            background: linear-gradient(120deg, #7f1d1d 0%, #dc2626 50%, #7f1d1d 100%);
+            border-color: rgba(255, 51, 102, 0.85);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 27, 75, 0.95);
+            border-color: rgba(129, 140, 248, 0.75);
+        }
+
+        .status-note {
+            font-size: 11px;
+            color: #d8b4fe;
+            text-align: left;
+            min-height: 16px;
+            line-height: 1.35;
+        }
+
+        .indicator-box {
+            display: none;
+            background: rgba(12, 6, 26, 0.92);
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            border-radius: 14px;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .indicator-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .metric-card {
+            background: rgba(30, 16, 58, 0.85);
+            border: 1px solid rgba(192, 132, 252, 0.25);
+            border-radius: 10px;
+            padding: 6px;
+        }
+
+        .metric-title {
+            font-size: 9px;
+            color: #d8b4fe;
+        }
+
+        .metric-val {
+            font-size: 12px;
+            font-weight: bold;
+            color: #00ff66;
+            margin-top: 2px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            z-index: 99999999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+        }
+
+        .premium-modal {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(20, 10, 38, 0.99);
+            border: 1.5px solid #a855f7;
+            border-radius: 20px;
+            padding: 18px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .btn-close-modal {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ddd;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 10px;
+            padding: 9px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .floating-window {
+            position: fixed;
+            bottom: 24px;
+            right: 18px;
+            left: auto;
+            top: auto;
+            z-index: 999999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            touch-action: none;
+        }
+
+        .floating-logo-btn {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            border: 3px solid #00ff66;
+            background: radial-gradient(circle, #2e1065, #0f0720);
+            box-shadow: 0 0 20px #00ff66;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .floating-logo-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        .hide-control-btn {
+            margin-top: 4px;
+            background: #dc2626;
+            color: #fff;
+            border: 1px solid #ff3366;
+            border-radius: 8px;
+            padding: 3px 8px;
+            font-size: 9px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .result-toast-box {
+            position: fixed;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            z-index: 1000000;
+            background: rgba(10, 4, 25, 0.98);
+            border-radius: 18px;
+            padding: 16px 22px;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            opacity: 0;
+            transition: all 0.25s ease;
+            pointer-events: none;
+            min-width: 240px;
+        }
+
+        .result-toast-box.show {
+            display: flex;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .result-up { border: 2.5px solid #00ff66; color: #00ff66; }
+        .result-down { border: 2.5px solid #ff3366; color: #ff3366; }
+        .result-neutral { border: 2.5px solid #facc15; color: #facc15; }
+        .result-title { font-size: 11px; color: #d8b4fe; }
+        .result-badge { font-size: 19px; font-weight: 900; }
+        .result-reason { font-size: 11px; color: #f3e8ff; line-height: 1.35; }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+
+    <div class="app-card" id="appMainCard">
+        <div class="bot-header-logo">
+            <img src="https://i.ibb.co/7xfp9wPc/file-0000000034a882118c784129da56f6ed.png" alt="TradeX Logo">
+        </div>
+
+        <div>
+            <div class="app-title">TradeX Real-Time Analyzer</div>
+            <div class="app-sub">Live Polling / WebSocket + EMA(9/21) + RSI(14)</div>
+        </div>
+
+        <div class="live-badge" id="liveBadge">
+            <span class="dot" id="liveDot"></span>
+            <span id="liveStatusText">স্ট্যাটাস: অফলাইন</span>
+        </div>
+
+        <div class="input-group">
+            <span class="input-label">ACCESS KEY (Demo: TRADEX-PRO-2026)</span>
+            <input type="password" id="accessKeyInput" class="key-input" placeholder="ENTER KEY">
+        </div>
+
+        <div id="realtimePanel" style="display: none; flex-direction: column; gap: 10px;">
+            <div class="input-group">
+                <span class="input-label">রিয়েল-টাইম সোর্স মোড</span>
+                <select id="feedModeSelect" class="select-input">
+                    <option value="poll">HTTP JSON Polling (URL থেকে নির্দিষ্ট সময় পরপর)</option>
+                    <option value="ws">WebSocket Stream (ws:// বা wss://)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <span class="input-label" id="feedEndpointLabel">JSON Endpoint URL</span>
+                <input type="text" id="feedEndpointInput" class="text-input" placeholder="http://127.0.0.1:8080/live_closes.json">
+            </div>
+
+            <div class="input-group" id="pollIntervalGroup">
+                <span class="input-label">পোলিং ইন্টারভাল (সেকেন্ড, সর্বনিম্ন ২)</span>
+                <input type="number" id="pollIntervalInput" class="text-input" value="5" min="2" max="300">
+            </div>
+
+            <div class="btn-row">
+                <button type="button" class="btn-animated btn-active-bot" id="btnStartLive" onclick="startRealtimeFeed()">
+                    ▶ লাইভ চালু করুন
+                </button>
+                <button type="button" class="btn-animated btn-stop" id="btnStopLive" onclick="stopRealtimeFeed()">
+                    ⏹ বন্ধ করুন
+                </button>
+            </div>
+
+            <div class="status-note" id="feedLogNote">লাইভ সোর্স যুক্ত করে "লাইভ চালু করুন" চাপুন।</div>
+
+            <div class="input-group">
+                <span class="input-label">বর্তমান ক্লোজ সিরিজ (অন্তত ২২টি প্রাইস; লাইভ আসলে আপডেট হবে)</span>
+                <textarea id="priceSeriesInput" class="price-series-input"></textarea>
+            </div>
+
+            <div class="btn-row">
+                <button type="button" class="btn-animated btn-secondary" onclick="loadSampleTrend('UP')">📈 CALL টেস্ট ডেটা</button>
+                <button type="button" class="btn-animated btn-secondary" onclick="loadSampleTrend('DOWN')">📉 PUT টেস্ট ডেটা</button>
+            </div>
+
+            <button type="button" class="btn-animated" onclick="runManualAnalysis()">
+                ⚡ এখনই সিগনাল যাচাই করুন
+            </button>
+
+            <div class="indicator-box" id="indicatorSummary">
+                <div id="filterStatusText">ফলাফল: অপেক্ষমাণ</div>
+                <div class="indicator-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">EMA 9 / 21</div>
+                        <div class="metric-val" id="emaMetric">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">RSI (14)</div>
+                        <div class="metric-val" id="rsiMetric">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">CONFIDENCE</div>
+                        <div class="metric-val" id="confMetric">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-list">
+            <button class="btn-animated" id="btnVerify" type="button" onclick="verifyAccessKey()">VERIFY ACCESS KEY</button>
+            <button class="btn-animated btn-secondary" id="btnShowFloating" type="button" style="display: none;" onclick="openFloatingBot()">
+                🪟 ভাসমান বট উইন্ডো চালু করুন
+            </button>
+            <button class="btn-animated btn-secondary" id="btnBookmarkCode" type="button" style="display: none;" onclick="openBookmarkModal()">
+                ⭐ Chrome Bookmarklet Code
+            </button>
+            <a href="https://broker-qx.pro/sign-up/?lid=2408799" target="_blank" class="btn-animated">👤 Create Account</a>
+            <a href="https://t.me/+caxUKC4rS_8wNDA9" target="_blank" class="btn-animated">📢 Join Telegram Channel</a>
+        </div>
+    </div>
+
+    <!-- Wrong Key Modal -->
+    <div class="modal-overlay" id="wrongKeyModal">
+        <div class="premium-modal" style="border-color: #ff3366;">
+            <div style="font-size: 28px;">🚫</div>
+            <div style="font-size: 16px; font-weight: bold; color: #ff3366;">Access Denied</div>
+            <div style="font-size: 12px; color: #e9d5ff; line-height: 1.4;">
+                পাসওয়ার্ড সঠিক নয়। সঠিক কী (TRADEX-PRO-2026) ব্যবহার করুন অথবা এডমিনের সাথে যোগাযোগ করুন।
+            </div>
+            <a href="https://wa.me/8801718355205" target="_blank" class="btn-animated btn-active-bot">💬 Contact on WhatsApp</a>
+            <button class="btn-close-modal" type="button" onclick="closeWrongKeyModal()">বন্ধ করুন</button>
+        </div>
+    </div>
+
+    <!-- Bookmarklet Modal -->
+    <div class="modal-overlay" id="bookmarkModal">
+        <div class="premium-modal">
+            <div style="font-size: 15px; font-weight: bold; color: #00ff66;">Chrome Bookmarklet Code (EMA + RSI)</div>
+            <div style="font-size: 11px; color: #e9d5ff; text-align: left; line-height: 1.4;">
+                বর্তমান সেভ করা ক্লোজ প্রাইস সিরিজ থেকে EMA(9/21) ও RSI(14) হিসাব করে ভাসমান সিগনাল দেখায়।
+            </div>
+            <textarea id="bookmarkCodeText" readonly style="width: 100%; height: 80px; background: #090317; border: 1px solid #a855f7; border-radius: 8px; color: #00ff66; font-size: 10px; font-family: monospace; padding: 8px;"></textarea>
+            <button type="button" class="btn-animated btn-active-bot" id="btnCopyBookmark" onclick="copyBookmarkletCode()">📋 Copy Bookmarklet Code</button>
+            <button class="btn-close-modal" type="button" onclick="closeBookmarkModal()">বন্ধ করুন</button>
+        </div>
+    </div>
+
+    <!-- Floating Bot -->
+    <div class="floating-window" id="floatingBotWindow">
+        <div class="floating-logo-btn" id="draggableLogo">
+            <img src="https://i.ibb.co/7xfp9wPc/file-0000000034a882118c784129da56f6ed.png" alt="Floating Logo">
+        </div>
+        <button class="hide-control-btn" type="button" onclick="hideFloatingBot()">HIDE</button>
+    </div>
+
+    <!-- Signal Toast -->
+    <div class="result-toast-box" id="resultToast">
+        <div class="result-title">TradeX Real-Time Signal</div>
+        <div class="result-badge" id="resultDirectionText">NO TRADE</div>
+        <div class="result-reason" id="resultReasonText"></div>
+    </div>
+
+    <script>
+        const DEFAULT_ACCESS_KEY = "TRADEX-PRO-2026";
+        const SERIES_KEY = "tradex_rt_series_v1";
+        const CONFIG_KEY = "tradex_rt_config_v1";
+
+        const DEFAULT_SERIES = [
+            1.0840, 1.0844, 1.0842, 1.0847, 1.0851,
+            1.0849, 1.0854, 1.0859, 1.0857, 1.0863,
+            1.0868, 1.0866, 1.0872, 1.0877, 1.0875,
+            1.0881, 1.0885, 1.0883, 1.0889, 1.0894,
+            1.0892, 1.0897, 1.0895, 1.0900
+        ];
+
+        function calculateEMA(values, period) {
+            if (!Array.isArray(values) || values.length < period) return null;
+            const k = 2 / (period + 1);
+            let sum = 0;
+            for (let i = 0; i < period; i++) sum += values[i];
+            let ema = sum / period;
+            for (let i = period; i < values.length; i++) {
+                ema = values[i] * k + ema * (1 - k);
+            }
+            return Number(ema.toFixed(5));
+        }
+
+        function calculateRSI(values, period = 14) {
+            if (!Array.isArray(values) || values.length <= period) return null;
+            let gains = 0;
+            let losses = 0;
+
+            for (let i = 1; i <= period; i++) {
+                const diff = values[i] - values[i - 1];
+                if (diff >= 0) gains += diff;
+                else losses += Math.abs(diff);
+            }
+
+            let avgGain = gains / period;
+            let avgLoss = losses / period;
+
+            for (let i = period + 1; i < values.length; i++) {
+                const diff = values[i] - values[i - 1];
+                const gain = diff > 0 ? diff : 0;
+                const loss = diff < 0 ? Math.abs(diff) : 0;
+                avgGain = (avgGain * (period - 1) + gain) / period;
+                avgLoss = (avgLoss * (period - 1) + loss) / period;
+            }
+
+            if (avgLoss === 0) return 100;
+            const rs = avgGain / avgLoss;
+            return Number((100 - 100 / (1 + rs)).toFixed(2));
+        }
+
+        function parseSeriesText(rawText) {
+            return rawText
+                .split(/[\s,]+/)
+                .map(v => parseFloat(v.trim()))
+                .filter(n => Number.isFinite(n) && n > 0);
+        }
+
+        // Supports array of closes, object with closes/prices/candles/data, or single tick/price message
+        function extractClosesFromPayload(payload, existingSeries) {
+            if (typeof payload === "number" && Number.isFinite(payload) && payload > 0) {
+                const next = [...existingSeries, payload];
+                return next.slice(-120);
+            }
+
+            if (payload && typeof payload === "object") {
+                const singleTick = payload.close ?? payload.price ?? payload.last ?? payload.c;
+                if (typeof singleTick === "number" && Number.isFinite(singleTick) && singleTick > 0) {
+                    const next = [...existingSeries, singleTick];
+                    return next.slice(-120);
+                }
+
+                let list = null;
+                if (Array.isArray(payload)) list = payload;
+                else if (Array.isArray(payload.closes)) list = payload.closes;
+                else if (Array.isArray(payload.prices)) list = payload.prices;
+                else if (Array.isArray(payload.candles)) list = payload.candles;
+                else if (Array.isArray(payload.data)) list = payload.data;
+
+                if (Array.isArray(list)) {
+                    const closes = [];
+                    for (const item of list) {
+                        if (typeof item === "number" && Number.isFinite(item) && item > 0) {
+                            closes.push(item);
+                        } else if (Array.isArray(item) && item.length >= 3) {
+                            const c = Number(item[2]);
+                            if (Number.isFinite(c) && c > 0) closes.push(c);
+                        } else if (item && typeof item === "object") {
+                            const rawClose = item.close ?? item.c ?? item.price;
+                            const c = Number(rawClose);
+                            if (Number.isFinite(c) && c > 0) closes.push(c);
+                        }
+                    }
+                    return closes.slice(-120);
+                }
+            }
+            return [];
+        }
+
+        function analyzeMarketSeries(prices) {
+            if (!Array.isArray(prices) || prices.length < 22) {
+                return {
+                    signal: "NO TRADE",
+                    tone: "neutral",
+                    ema9: null,
+                    ema21: null,
+                    rsi14: null,
+                    confidence: 0,
+                    reason: "অন্তত ২২টি বৈধ ক্লোজ প্রাইস প্রয়োজন।"
+                };
+            }
+
+            const ema9 = calculateEMA(prices, 9);
+            const ema21 = calculateEMA(prices, 21);
+            const rsi14 = calculateRSI(prices, 14);
+            const lastClose = prices[prices.length - 1];
+            const prevClose = prices[prices.length - 2];
+            const candleMoveUp = lastClose > prevClose;
+            const candleMoveDown = lastClose < prevClose;
+
+            const bullTrend = ema9 !== null && ema21 !== null && ema9 > ema21;
+            const bearTrend = ema9 !== null && ema21 !== null && ema9 < ema21;
+            const bullRsiZone = rsi14 !== null && rsi14 >= 52 && rsi14 <= 72;
+            const bearRsiZone = rsi14 !== null && rsi14 >= 28 && rsi14 <= 48;
+
+            if (bullTrend && bullRsiZone && candleMoveUp) {
+                const spreadScore = Math.min(20, Math.round(Math.abs(ema9 - ema21) * 10000));
+                const rsiScore = Math.min(20, Math.round((rsi14 - 50) * 1.2));
+                const confidence = Math.min(88, Math.max(62, 55 + spreadScore + rsiScore));
+                return {
+                    signal: "CALL",
+                    tone: "up",
+                    ema9,
+                    ema21,
+                    rsi14,
+                    confidence,
+                    reason: `EMA9 > EMA21, RSI(${rsi14}) সুস্থ বুলিশ জোনে এবং শেষ প্রাইস ঊর্ধ্বমুখী।`
+                };
+            }
+
+            if (bearTrend && bearRsiZone && candleMoveDown) {
+                const spreadScore = Math.min(20, Math.round(Math.abs(ema9 - ema21) * 10000));
+                const rsiScore = Math.min(20, Math.round((50 - rsi14) * 1.2));
+                const confidence = Math.min(88, Math.max(62, 55 + spreadScore + rsiScore));
+                return {
+                    signal: "PUT",
+                    tone: "down",
+                    ema9,
+                    ema21,
+                    rsi14,
+                    confidence,
+                    reason: `EMA9 < EMA21, RSI(${rsi14}) সুস্থ বিয়ারিশ জোনে এবং শেষ প্রাইস নিম্নমুখী।`
+                };
+            }
+
+            let reason = "কনফার্মেশন ফিল্টার পাস হয়নি (সিগনাল এড়ানো হয়েছে)।";
+            if (rsi14 !== null && rsi14 > 72) reason = `RSI(${rsi14}) Overbought জোনে—রিভার্সালের ঝুঁকি আছে।`;
+            else if (rsi14 !== null && rsi14 < 28) reason = `RSI(${rsi14}) Oversold জোনে—বাউন্সের ঝুঁকি আছে।`;
+            else if (bullTrend && !candleMoveUp) reason = "EMA বুলিশ হলেও শেষ প্রাইস কনফার্মেশন দেয়নি।";
+            else if (bearTrend && !candleMoveDown) reason = "EMA বিয়ারিশ হলেও শেষ প্রাইস কনফার্মেশন দেয়নি।";
+
+            return {
+                signal: "NO TRADE",
+                tone: "neutral",
+                ema9,
+                ema21,
+                rsi14,
+                confidence: 40,
+                reason
+            };
+        }
+
+        const priceInputEl = document.getElementById("priceSeriesInput");
+        const feedModeEl = document.getElementById("feedModeSelect");
+        const feedEndpointEl = document.getElementById("feedEndpointInput");
+        const pollIntervalEl = document.getElementById("pollIntervalInput");
+        const pollGroupEl = document.getElementById("pollIntervalGroup");
+        const feedLabelEl = document.getElementById("feedEndpointLabel");
+        const feedLogNoteEl = document.getElementById("feedLogNote");
+        const liveDotEl = document.getElementById("liveDot");
+        const liveStatusTextEl = document.getElementById("liveStatusText");
+
+        priceInputEl.value = localStorage.getItem(SERIES_KEY) || DEFAULT_SERIES.join(", ");
+
+        const savedCfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}");
+        if (savedCfg.mode) feedModeEl.value = savedCfg.mode;
+        if (savedCfg.endpoint) feedEndpointEl.value = savedCfg.endpoint;
+        else feedEndpointEl.value = "http://127.0.0.1:8080/live_closes.json";
+        if (savedCfg.interval) pollIntervalEl.value = savedCfg.interval;
+
+        function syncModeUI() {
+            if (feedModeEl.value === "ws") {
+                feedLabelEl.innerText = "WebSocket URL (ws:// বা wss://)";
+                pollGroupEl.style.display = "none";
+            } else {
+                feedLabelEl.innerText = "JSON Endpoint URL";
+                pollGroupEl.style.display = "flex";
+            }
+            localStorage.setItem(CONFIG_KEY, JSON.stringify({
+                mode: feedModeEl.value,
+                endpoint: feedEndpointEl.value,
+                interval: pollIntervalEl.value
+            }));
+        }
+
+        feedModeEl.addEventListener("change", syncModeUI);
+        feedEndpointEl.addEventListener("input", syncModeUI);
+        pollIntervalEl.addEventListener("input", syncModeUI);
+        priceInputEl.addEventListener("input", () => {
+            localStorage.setItem(SERIES_KEY, priceInputEl.value);
+        });
+        syncModeUI();
+
+        function setLiveBadge(state, label) {
+            liveDotEl.className = "dot" + (state === "live" ? " live" : state === "err" ? " err" : "");
+            liveStatusTextEl.innerText = `স্ট্যাটাস: ${label}`;
+        }
+
+        function updateIndicatorUI(res) {
+            const box = document.getElementById("indicatorSummary");
+            box.style.display = "block";
+            document.getElementById("emaMetric").innerText =
+                res.ema9 !== null && res.ema21 !== null ? `${res.ema9} / ${res.ema21}` : "N/A";
+            document.getElementById("rsiMetric").innerText =
+                res.rsi14 !== null ? `${res.rsi14}` : "N/A";
+            document.getElementById("confMetric").innerText = `${res.confidence}%`;
+            document.getElementById("filterStatusText").innerText =
+                `ফলাফল: ${res.signal} — ${res.reason}`;
+        }
+
+        function showFloatingResult(res) {
+            const toast = document.getElementById("resultToast");
+            const badge = document.getElementById("resultDirectionText");
+            const reason = document.getElementById("resultReasonText");
+
+            toast.className = "result-toast-box show " + (
+                res.tone === "up" ? "result-up" :
+                res.tone === "down" ? "result-down" : "result-neutral"
+            );
+
+            badge.innerText =
+                res.signal === "CALL" ? `⬆ CALL (${res.confidence}%)` :
+                res.signal === "PUT" ? `⬇ PUT (${res.confidence}%)` :
+                `⏸ NO TRADE (${res.confidence}%)`;
+
+            reason.innerText = res.reason;
+
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 3000);
+        }
+
+        function evaluateCurrentSeries(showToast = true) {
+            const prices = parseSeriesText(priceInputEl.value);
+            const res = analyzeMarketSeries(prices);
+            updateIndicatorUI(res);
+            if (showToast) showFloatingResult(res);
+            return res;
+        }
+
+        function runManualAnalysis() {
+            evaluateCurrentSeries(true);
+        }
+
+        function loadSampleTrend(direction) {
+            const base = 1.0850;
+            const arr = [];
+            for (let i = 0; i < 24; i++) {
+                const delta = direction === "UP"
+                    ? ((i % 3 === 1) ? -0.00018 : 0.00024)
+                    : ((i % 3 === 1) ? 0.00018 : -0.00024);
+                const val = i === 0 ? base : Number((arr[i - 1] + delta).toFixed(5));
+                arr.push(val);
+            }
+            priceInputEl.value = arr.join(", ");
+            localStorage.setItem(SERIES_KEY, priceInputEl.value);
+            feedLogNoteEl.innerText = direction === "UP"
+                ? "CALL টেস্ট ডেটা লোড করা হয়েছে।"
+                : "PUT টেস্ট ডেটা লোড করা হয়েছে।";
+            evaluateCurrentSeries(true);
+        }
+
+        let pollTimer = null;
+        let wsClient = null;
+        let isPollingBusy = false;
+
+        function stopRealtimeFeed() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            if (wsClient) {
+                try { wsClient.close(); } catch (_) {}
+                wsClient = null;
+            }
+            isPollingBusy = false;
+            setLiveBadge("off", "অফলাইন");
+            feedLogNoteEl.innerText = "রিয়েল-টাইম ফিড বন্ধ করা হয়েছে।";
+        }
+
+        async function pollOnce() {
+            if (isPollingBusy) return;
+            isPollingBusy = true;
+            const url = feedEndpointEl.value.trim();
+
+            try {
+                const resp = await fetch(url, { cache: "no-store" });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const current = parseSeriesText(priceInputEl.value);
+                const nextSeries = extractClosesFromPayload(data, current);
+
+                if (nextSeries.length >= 22) {
+                    priceInputEl.value = nextSeries.join(", ");
+                    localStorage.setItem(SERIES_KEY, priceInputEl.value);
+                    const res = evaluateCurrentSeries(false);
+                    setLiveBadge("live", `লাইভ (${res.signal})`);
+                    feedLogNoteEl.innerText = `আপডেট (${new Date().toLocaleTimeString()}): ${nextSeries.length}টি প্রাইস → ${res.signal}`;
+                } else {
+                    setLiveBadge("err", "ডেটা অপর্যাপ্ত");
+                    feedLogNoteEl.innerText = `সতর্কতা: মাত্র ${nextSeries.length}টি বৈধ প্রাইস পাওয়া গেছে (অন্তত ২২টি দরকার)।`;
+                }
+            } catch (err) {
+                setLiveBadge("err", "কানেকশন এরর");
+                feedLogNoteEl.innerText = `পোলিং এরর: ${err.message}। সচল JSON URL ও CORS যাচাই করুন।`;
+            } finally {
+                isPollingBusy = false;
+            }
+        }
+
+        function startRealtimeFeed() {
+            stopRealtimeFeed();
+            const mode = feedModeEl.value;
+            const endpoint = feedEndpointEl.value.trim();
+
+            if (!endpoint) {
+                setLiveBadge("err", "URL নেই");
+                feedLogNoteEl.innerText = "একটি বৈধ Endpoint URL দিন।";
+                return;
+            }
+
+            if (mode === "poll") {
+                const sec = Math.max(2, parseInt(pollIntervalEl.value, 10) || 5);
+                setLiveBadge("live", "পোলিং চালু");
+                feedLogNoteEl.innerText = `প্রতি ${sec} সেকেন্ড পরপর ${endpoint} থেকে ডেটা আনা হচ্ছে...`;
+                pollOnce();
+                pollTimer = setInterval(pollOnce, sec * 1000);
+            } else {
+                if (!endpoint.startsWith("ws://") && !endpoint.startsWith("wss://")) {
+                    setLiveBadge("err", "ভুল WS URL");
+                    feedLogNoteEl.innerText = "WebSocket URL অবশ্যই ws:// অথবা wss:// দিয়ে শুরু হতে হবে।";
+                    return;
+                }
+                setLiveBadge("live", "WS সংযোগ হচ্ছে");
+                feedLogNoteEl.innerText = `WebSocket সংযোগ চেষ্টা চলছে: ${endpoint}`;
+
+                try {
+                    wsClient = new WebSocket(endpoint);
+                    wsClient.onopen = () => {
+                        setLiveBadge("live", "WS সংযুক্ত");
+                        feedLogNoteEl.innerText = "WebSocket সংযুক্ত হয়েছে; লাইভ ডেটার অপেক্ষায়...";
+                    };
+                    wsClient.onmessage = (ev) => {
+                        try {
+                            const parsed = JSON.parse(ev.data);
+                            const current = parseSeriesText(priceInputEl.value);
+                            const nextSeries = extractClosesFromPayload(parsed, current);
+                            if (nextSeries.length >= 22) {
+                                priceInputEl.value = nextSeries.join(", ");
+                                localStorage.setItem(SERIES_KEY, priceInputEl.value);
+                                const res = evaluateCurrentSeries(false);
+                                setLiveBadge("live", `WS লাইভ (${res.signal})`);
+                                feedLogNoteEl.innerText = `WS আপডেট: ${nextSeries.length}টি প্রাইস → ${res.signal}`;
+                            }
+                        } catch (_) {}
+                    };
+                    wsClient.onerror = () => {
+                        setLiveBadge("err", "WS এরর");
+                        feedLogNoteEl.innerText = "WebSocket সংযোগে এরর এসেছে। সার্ভার সচল আছে কি না দেখুন।";
+                    };
+                    wsClient.onclose = () => {
+                        if (wsClient) {
+                            setLiveBadge("off", "WS বিচ্ছিন্ন");
+                            feedLogNoteEl.innerText = "WebSocket সংযোগ বন্ধ হয়েছে।";
+                        }
+                    };
+                } catch (err) {
+                    setLiveBadge("err", "WS ব্যর্থ");
+                    feedLogNoteEl.innerText = `WebSocket শুরু করা যায়নি: ${err.message}`;
+                }
+            }
+        }
+
+        function verifyAccessKey() {
+            const key = document.getElementById("accessKeyInput").value.trim();
+            if (key === DEFAULT_ACCESS_KEY) {
+                document.getElementById("btnVerify").style.display = "none";
+                document.getElementById("realtimePanel").style.display = "flex";
+                document.getElementById("btnShowFloating").style.display = "flex";
+                document.getElementById("btnBookmarkCode").style.display = "flex";
+                evaluateCurrentSeries(false);
+            } else {
+                document.getElementById("wrongKeyModal").style.display = "flex";
+            }
+        }
+
+        document.getElementById("accessKeyInput").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") verifyAccessKey();
+        });
+
+        function closeWrongKeyModal() {
+            document.getElementById("wrongKeyModal").style.display = "none";
+        }
+
+        function openFloatingBot() {
+            const win = document.getElementById("floatingBotWindow");
+            if (!win.style.left && !win.style.right) {
+                win.style.right = "18px";
+                win.style.bottom = "24px";
+            }
+            win.style.display = "flex";
+        }
+
+        function hideFloatingBot() {
+            document.getElementById("floatingBotWindow").style.display = "none";
+        }
+
+        const floatingWin = document.getElementById("floatingBotWindow");
+        const draggableLogo = document.getElementById("draggableLogo");
+        let isDragging = false;
+        let startX = 0, startY = 0, initialX = 0, initialY = 0;
+
+        draggableLogo.addEventListener("pointerdown", (e) => {
+            isDragging = false;
+            const rect = floatingWin.getBoundingClientRect();
+            floatingWin.style.left = rect.left + "px";
+            floatingWin.style.top = rect.top + "px";
+            floatingWin.style.right = "auto";
+            floatingWin.style.bottom = "auto";
+            startX = e.clientX;
+            startY = e.clientY;
+            initialX = rect.left;
+            initialY = rect.top;
+            draggableLogo.setPointerCapture(e.pointerId);
+        });
+
+        draggableLogo.addEventListener("pointermove", (e) => {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+                isDragging = true;
+                const maxX = Math.max(0, window.innerWidth - floatingWin.offsetWidth);
+                const maxY = Math.max(0, window.innerHeight - floatingWin.offsetHeight);
+                floatingWin.style.left = Math.min(maxX, Math.max(0, initialX + dx)) + "px";
+                floatingWin.style.top = Math.min(maxY, Math.max(0, initialY + dy)) + "px";
+            }
+        });
+
+        draggableLogo.addEventListener("pointerup", () => {
+            setTimeout(() => { isDragging = false; }, 60);
+        });
+
+        draggableLogo.onclick = () => {
+            if (!isDragging) evaluateCurrentSeries(true);
+        };
+
+        const EXACT_BOOKMARK_CODE = "javascript:(function(){if(document.getElementById('tx-ind-box')){var b=document.getElementById('tx-ind-box');b.style.display=b.style.display==='none'?'block':'none';return;}var raw=localStorage.getItem('tradex_rt_series_v1')||'1.0840,1.0844,1.0842,1.0847,1.0851,1.0849,1.0854,1.0859,1.0857,1.0863,1.0868,1.0866,1.0872,1.0877,1.0875,1.0881,1.0885,1.0883,1.0889,1.0894,1.0892,1.0897';var p=raw.split(/[\\s,]+/).map(Number).filter(function(n){return Number.isFinite(n)&&n>0;});function ema(a,per){if(a.length<per)return null;var k=2/(per+1),s=0;for(var i=0;i<per;i++)s+=a[i];var e=s/per;for(var j=per;j<a.length;j++)e=a[j]*k+e*(1-k);return +e.toFixed(5);}function rsi(a,per){per=per||14;if(a.length<=per)return null;var g=0,l=0;for(var i=1;i<=per;i++){var d=a[i]-a[i-1];if(d>=0)g+=d;else l-=d;}var ag=g/per,al=l/per;for(var j=per+1;j<a.length;j++){var df=a[j]-a[j-1];ag=(ag*(per-1)+(df>0?df:0))/per;al=(al*(per-1)+(df<0?-df:0))/per;}return al===0?100:+(100-100/(1+ag/al)).toFixed(2);}var e9=ema(p,9),e21=ema(p,21),r=rsi(p,14),sig='NO TRADE';if(p.length>=22&&e9>e21&&r>=52&&r<=72&&p[p.length-1]>p[p.length-2])sig='CALL';else if(p.length>=22&&e9<e21&&r>=28&&r<=48&&p[p.length-1]<p[p.length-2])sig='PUT';var box=document.createElement('div');box.id='tx-ind-box';box.style.cssText='position:fixed;bottom:20px;right:16px;z-index:2147483647;background:#120a24;color:#fff;border:2px solid #a855f7;border-radius:14px;padding:12px 14px;font-family:sans-serif;font-size:12px;box-shadow:0 0 20px rgba(0,0,0,.7);';box.innerHTML='<b>TradeX: '+sig+'</b><br>EMA9/21: '+(e9||'-')+' / '+(e21||'-')+'<br>RSI14: '+(r||'-');document.body.appendChild(box);})();";
+
+        document.getElementById("bookmarkCodeText").value = EXACT_BOOKMARK_CODE;
+
+        function openBookmarkModal() {
+            document.getElementById("bookmarkModal").style.display = "flex";
+        }
+
+        function closeBookmarkModal() {
+            document.getElementById("bookmarkModal").style.display = "none";
+        }
+
+        function copyBookmarkletCode() {
+            const ta = document.getElementById("bookmarkCodeText");
+            const btn = document.getElementById("btnCopyBookmark");
+            const done = () => {
+                btn.innerText = "✅ Copied!";
+                setTimeout(() => { btn.innerText = "📋 Copy Bookmarklet Code"; }, 2200);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(EXACT_BOOKMARK_CODE).then(done).catch(() => {
+                    ta.select();
+                    document.execCommand("copy");
+                    done();
+                });
+            } else {
+                ta.select();
+                document.execCommand("copy");
+                done();
+            }
+        }
+    </script>
+</body>
+</html>
